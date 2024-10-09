@@ -54,6 +54,7 @@ resource "google_container_cluster" "mlp" {
   project                  = data.google_project.environment.project_id
   remove_default_node_pool = false
   subnetwork               = module.create-vpc.subnet-1
+  enable_kubernetes_alpha = true
 
   addons_config {
     gcp_filestore_csi_driver_config {
@@ -75,14 +76,17 @@ resource "google_container_cluster" "mlp" {
 
     auto_provisioning_defaults {
       disk_type = "pd-balanced"
+      disk_size = 100
+      image_type = "UBUNTU_CONTAINERD"
       oauth_scopes = [
-        "https://www.googleapis.com/auth/cloud-platform"
+        "https://www.googleapis.com/auth/cloud-platform",
+        "https://www.googleapis.com/auth/devstorage.read_only"
       ]
       service_account = google_service_account.cluster.email
 
       management {
-        auto_repair  = true
-        auto_upgrade = true
+        auto_repair  = false
+        auto_upgrade = false
       }
 
       shielded_instance_config {
@@ -221,11 +225,17 @@ resource "google_container_cluster" "mlp" {
       enable_private_nodes = true
     }
 
+    management {
+        auto_repair  = false
+        auto_upgrade = false
+      }
+
     node_config {
       machine_type    = "e2-standard-4"
       service_account = google_service_account.cluster.email
       oauth_scopes = [
-        "https://www.googleapis.com/auth/cloud-platform"
+        "https://www.googleapis.com/auth/cloud-platform",
+        "https://www.googleapis.com/auth/devstorage.read_only"
       ]
 
       gcfs_config {
@@ -245,11 +255,12 @@ resource "google_container_cluster" "mlp" {
         enabled = true
       }
     }
+
   }
 
   private_cluster_config {
     enable_private_nodes    = true
-    enable_private_endpoint = true
+    enable_private_endpoint = false
     master_ipv4_cidr_block  = "172.16.0.32/28"
   }
 
